@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.text.format.DateFormat
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,7 +26,10 @@ import androidx.navigation.fragment.navArgs
 import com.bignerdranch.android.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.ParseException
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
@@ -127,12 +131,18 @@ class CrimeDetailFragment : Fragment() {
             }
         }
 
-        setFragmentResultListener(
-            DatePickerFragment.REQUEST_KEY_DATE
-        ) { _, bundle ->
-            val newDate =
-                bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE) as Date
-            crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
+        setFragmentResultListener(DatePickerFragment.REQUEST_KEY_DATE) { _, bundle ->
+            bundle.getString(DatePickerFragment.BUNDLE_KEY_DATE)?.let { dateString ->
+                val format = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
+                try {
+                    val newDate = format.parse(dateString)
+                    newDate?.let {
+                        crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
+                    }
+                } catch (e: ParseException) {
+                    Log.e("CrimeDetailFragment", "Error parsing date", e)
+                }
+            }
         }
     }
 
